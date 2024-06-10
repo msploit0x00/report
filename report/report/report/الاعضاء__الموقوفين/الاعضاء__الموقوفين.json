@@ -1,0 +1,48 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2024-05-09 12:22:52.433446",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "javascript": "frappe.query_reports['\u0627\u0644\u0627\u0639\u0636\u0627\u0621  \u0627\u0644\u0645\u0648\u0642\u0648\u0641\u064a\u0646'] = {\r\n    \"filters\": [\r\n        {\r\n            fieldname: \"name\",\r\n            label: \"Please select customer\",\r\n            fieldtype: \"Link\",\r\n            options: \"Customer\",\r\n            width: \"200px\",  // Set the desired width for the label\r\n        },\r\n        {\r\n            fieldname: \"customer_group\",\r\n            label: \"Please select customer Group\",\r\n            fieldtype: \"Link\",\r\n            options: \"Customer Group\",\r\n            width: \"200px\",  // Set the desired width for the label\r\n        },\r\n        {\r\n            fieldname: \"custom_company_code\",\r\n            label: \"Please write customer code\",\r\n            fieldtype: \"Data\",\r\n            width: \"200px\",  // Set the desired width for the label\r\n        },\r\n        {\r\n            fieldname: \"tax_id\",\r\n            label: \"Please write Tax ID\",\r\n            fieldtype: \"Data\",\r\n            width: \"200px\",  // Set the desired width for the label\r\n        },\r\n        {\r\n            fieldname: \"customer_name\",\r\n            label: \"Please write Company name\",\r\n            fieldtype: \"Data\",\r\n            width: \"200px\",  // Set the desired width for the label\r\n        },\r\n{\r\n    \"fieldname\": \"customer\",\r\n    \"label\": __(\"Customer\"),\r\n    \"fieldtype\": \"MultiSelectList\",\r\n    \"reqd\": 1,\r\n    get_data: function(txt) {\r\n        if (!frappe.query_report.filters) return;\r\n\r\n        let customer_type = \"Customer\"; // Assuming \"Customer\" is the party type for customers\r\n        return frappe.db.get_link_options(customer_type, txt);\r\n    }\r\n}\r\n    ]\r\n};\r\n",
+ "letter_head": "",
+ "modified": "2024-05-15 13:14:10.568777",
+ "modified_by": "Administrator",
+ "module": "Report",
+ "name": "\u0627\u0644\u0627\u0639\u0636\u0627\u0621  \u0627\u0644\u0645\u0648\u0642\u0648\u0641\u064a\u0646",
+ "owner": "ahmed.radwan@datasofteg.com",
+ "prepared_report": 0,
+ "query": "    SELECT\r\n        `custom_company_code` AS `Company_Code`,\r\n        `tabCustomer`.`name` AS `Customer`,\r\n        `tabCustomer`.`customer_name` AS `Company Name In Arabic`,\r\n        `tabCustomer`.`custom_customer_name_in_english` AS `Company Name In English`,\r\n        `tabCustomer`.`custom_name_of_the_cioowner_of_the_company` AS `Name of the CIO/owner of the company`,\r\n        `tabCustomer`.`custom_responsible_persons_name` AS `Responsible person's name`,\r\n        `tabCustomer`.`tax_id` AS `Tax Id`,\r\n        `tabCustomer`.`customer_group` AS `Customer Group`\r\n    FROM\r\n        `tabCustomer`\r\n    WHERE\r\n        (\r\n            `tabCustomer`.`name` NOT IN (\r\n                SELECT DISTINCT\r\n                    `tabSales Invoice`.`customer`\r\n                FROM\r\n                    `tabSales Invoice`\r\n                WHERE\r\n                    `tabSales Invoice`.`docstatus` = 1\r\n                    AND (\r\n                        `tabSales Invoice`.`status` <> \"Paid\"\r\n                        OR `tabSales Invoice`.`custom_annual_fees` <> 1\r\n                    )\r\n            )\r\n            OR `tabCustomer`.`name` NOT IN (\r\n                SELECT DISTINCT\r\n                    `tabSales Invoice`.`customer`\r\n                FROM\r\n                    `tabSales Invoice`\r\n            )\r\n        )\r\n",
+ "ref_doctype": "Customer",
+ "report_name": "\u0627\u0644\u0627\u0639\u0636\u0627\u0621  \u0627\u0644\u0645\u0648\u0642\u0648\u0641\u064a\u0646",
+ "report_script": "columns = [\r\n    _(\"custom_company_code\") + \"::120\",\r\n    _(\"name:Link/Customer\") + \"::150\",\r\n    _(\"Customer name\") + \"::120\",\r\n    _(\"Custom customer_name_in_english\") + \"::120\",\r\n    _(\"custom_name_of_the_cioowner_of_the_company\") + \"::150\",\r\n    _(\"custom_responsible_persons_name\") + \"::150\",\r\n    _(\"tax_id\") + \"::120\",\r\n    _(\"customer_group\") + \"::120\",\r\n]\r\n\r\n# Get values from filters or set them to None\r\ncustomer_name = filters.get(\"name\")\r\ncustomer_group = filters.get(\"customer_group\")\r\ntax_id = filters.get(\"tax_id\")\r\ncustom_company_code = filters.get(\"custom_company_code\")\r\n\r\nmysql = \"\"\"\r\n    SELECT\r\n        `tabCustomer`.`custom_company_code`,\r\n        `tabCustomer`.`name`,\r\n        `tabCustomer`.`customer_name` AS `customer_name`,\r\n        `tabCustomer`.`custom_customer_name_in_english`,\r\n        `tabCustomer`.`custom_name_of_the_cioowner_of_the_company`,\r\n        `tabCustomer`.`custom_responsible_persons_name`,\r\n        `tabCustomer`.`tax_id`,\r\n        `tabCustomer`.`customer_group`\r\n    FROM\r\n        `tabCustomer`\r\n    WHERE\r\n        `tabCustomer`.`custom_customer_status` = \"Suspended\"\r\n        AND (%(customer_name)s IS NULL OR `tabCustomer`.`name` LIKE %(customer_name)s)\r\n        AND (%(tax_id)s IS NULL OR `tabCustomer`.`tax_id` LIKE %(tax_id)s)\r\n        AND (%(custom_company_code)s IS NULL OR `tabCustomer`.`custom_company_code` LIKE %(custom_company_code)s)\r\n        AND (\r\n            `tabCustomer`.`name` NOT IN (\r\n                SELECT DISTINCT\r\n                    `tabSales Invoice`.`customer`\r\n                FROM\r\n                    `tabSales Invoice`\r\n                WHERE\r\n                    `tabSales Invoice`.`docstatus` = 1\r\n                    AND (\r\n                        `tabSales Invoice`.`status` <> \"Paid\"\r\n                        OR `tabSales Invoice`.`custom_annual_fees` <> 1\r\n                    )\r\n            )\r\n            OR `tabCustomer`.`name` NOT IN (\r\n                SELECT DISTINCT\r\n                    `tabSales Invoice`.`customer`\r\n                FROM\r\n                    `tabSales Invoice`\r\n            )\r\n        )\r\n        AND (%(customer_group)s IS NULL OR `tabCustomer`.`customer_group` = %(customer_group)s)\r\n\"\"\"\r\n\r\nmydata = frappe.db.sql(\r\n    mysql,\r\n    {\r\n        \"customer_name\": f\"%{customer_name}%\" if customer_name else None,\r\n        \"tax_id\": f\"%{tax_id}%\" if tax_id else None,\r\n        \"custom_company_code\": f\"%{custom_company_code}%\" if custom_company_code else None,\r\n        \"customer_group\": customer_group if customer_group else None,\r\n    },\r\n    as_dict=True,\r\n)\r\n\r\ndata = columns, mydata\r\n",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Sales Master Manager"
+  },
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "Sales User"
+  },
+  {
+   "role": "Stock Manager"
+  }
+ ]
+}
